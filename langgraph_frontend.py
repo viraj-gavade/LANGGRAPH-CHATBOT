@@ -1,9 +1,52 @@
 import streamlit as st 
 from langchain_core.messages import HumanMessage
+import uuid
 
 # Page configuration
 st.set_page_config(page_title="LangGraph Chatbot", layout="wide")
 st.title("🤖 LangGraph Chatbot")
+
+###################################### Utility Functions ############################################################################
+
+def generate_thread_id():
+    return uuid.uuid4()
+
+
+def reset_chat():
+    thread_id = generate_thread_id()
+    st.session_state['thread_id'] = thread_id
+    st.session_state['message_history'] = []
+    add_thread_id(st.session_state['thread_id'])
+
+
+def add_thread_id(thread_id):
+    if thread_id not in st.session_state['chat_threads']:
+        st.session_state['chat_threads'].append(thread_id)
+
+def get_coversation(thread_id):
+    config = {'configurable': {'thread_id': thread_id}}
+    state = chatbot.get_state(config=config)
+    messages = state.values.get("messages", [])
+    return messages
+
+
+
+
+
+# Session state -> dict 
+if 'message_history' not in st.session_state:
+    st.session_state['message_history'] = []
+
+if 'thread_id' not in st.session_state:
+    st.session_state['thread_id'] = generate_thread_id()
+
+
+
+if 'chat_threads' not in st.session_state:
+    st.session_state['chat_threads'] =   []
+
+
+add_thread_id(st.session_state['thread_id'])
 
 # Try to import backend
 try:
@@ -15,26 +58,48 @@ except Exception as e:
     st.error(f"❌ Backend Error: {error_msg}")
     st.info("Check the terminal for more details. Make sure all dependencies are installed and API keys are set.")
 
-# Session state -> dict 
-if 'message_history' not in st.session_state:
-    st.session_state['message_history'] = []
+
 
 if not backend_loaded:
     st.stop()  # Stop execution if backend failed to load
 
+###################################### Sidebar UI ############################################################################
+st.sidebar.title('Langgraph Chatbot')
+if st.sidebar.button('New chat'):
+    reset_chat()
+
+st.sidebar.header('My conversations')
+for thread_id in  st.session_state['chat_threads'] :
+    if st.sidebar.button(str(thread_id)):
+        st.session_state['thread_id'] = thread_id
+        messages = get_coversation(thread_id)
+       
+
+        temp_messages = []
+
+        for message in messages:
+        
+            if isinstance(message , HumanMessage):
+                role = 'user'
+            else:
+                role = 'assistant'
+            temp_messages.append({'role':role,'content':message.content})
+           
+            st.session_state['message_history'] = temp_messages
+        
+
+
 
 # Display chat messages
-st.write("### Chat History")
 for message in st.session_state['message_history']:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
 
 # Input section
 st.divider()
-st.write("### Send a Message")
 user_input = st.chat_input('Type your message here...')
 
-config = {'configurable':{'thread_id':1}}
+config = {'configurable':{'thread_id':st.session_state['thread_id']}}
 
 if user_input:
     try:
