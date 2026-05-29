@@ -6,7 +6,10 @@ from pydantic import BaseModel , Field
 import operator
 from langchain_core.messages import SystemMessage , HumanMessage , BaseMessage
 from langgraph.checkpoint.memory import MemorySaver
-load_dotenv()
+import os
+
+# Load .env from parent directory
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 class ChatState(TypedDict):
     messages : Annotated[list[BaseMessage], add_messages]
@@ -23,6 +26,7 @@ llm = ChatGroq(
     max_retries=2,
 )
 
+
 def chat_node(state : ChatState):
     messages = state['messages']
     response = llm.invoke(messages)
@@ -37,3 +41,7 @@ graph.add_edge(START,'chat_node')
 graph.add_edge('chat_node',END)
 
 chatbot = graph.compile(checkpointer=checkpointer)
+
+
+
+
