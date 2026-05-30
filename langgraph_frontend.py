@@ -1,5 +1,7 @@
 import streamlit as st 
 from langchain_core.messages import HumanMessage
+from langgraph_backend import chatbot , retrive_all_threads
+
 import uuid
 
 # Page configuration
@@ -31,6 +33,7 @@ def get_coversation(thread_id):
 
 
 
+###################################### Session SetUp ############################################################################
 
 
 # Session state -> dict 
@@ -43,14 +46,14 @@ if 'thread_id' not in st.session_state:
 
 
 if 'chat_threads' not in st.session_state:
-    st.session_state['chat_threads'] =   []
+    st.session_state['chat_threads'] =   retrive_all_threads()
 
 
 add_thread_id(st.session_state['thread_id'])
 
 # Try to import backend
 try:
-    from langgraph_backend import chatbot
+   
     backend_loaded = True
 except Exception as e:
     backend_loaded = False
